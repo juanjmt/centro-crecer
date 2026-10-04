@@ -310,7 +310,7 @@ ul, ol { margin: 0; padding: 0; }
   display: grid; grid-template-columns: .9fr 1.1fr;
 }
 .project-modal-media {
-  min-height: 320px; border-radius: 20px 0 0 20px; overflow: hidden;
+  aspect-ratio: 4 / 3; border-radius: 20px 0 0 20px; overflow: hidden;
   background: repeating-linear-gradient(45deg, #f1eef4, #f1eef4 10px, #e9e4ee 10px, #e9e4ee 20px);
 }
 .project-modal-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -486,16 +486,27 @@ ul, ol { margin: 0; padding: 0; }
   .project:last-child { grid-template-columns: 1fr; }
   .section { padding: 64px 0; }
 
+  /* Tarjetas de Proyectos: menos padding y letra un toque más chica para que el
+     contenedor no se haga tan largo y las fotos ganen peso relativo. */
+  .project { padding: 20px; gap: 10px; }
+  .project > p { font-size: .92rem; line-height: 1.55; }
+  .project .checks li { font-size: .88rem; margin-bottom: 6px; }
+
   .events-carousel { gap: 8px; }
-  .carousel-arrow { width: 38px; height: 38px; }
-  .event-card { flex-basis: 100%; min-width: 0; padding: 22px; }
+  .carousel-arrow { width: 34px; height: 34px; }
+  .event-card { flex-basis: 100%; min-width: 0; padding: 18px; gap: 10px; }
+  .event-card .ph-note { display: none; }
+  .event-card .event-text { font-size: .92rem; }
 
   .event-modal { grid-template-columns: 1fr; max-height: calc(100vh - 24px); }
   .event-modal-media { padding: 20px 20px 0; }
   .event-modal-body { padding: 20px; }
 
-  .project-modal { grid-template-columns: 1fr; max-height: calc(100vh - 24px); }
-  .project-modal-media { min-height: 200px; border-radius: 20px 20px 0 0; }
+  /* El modal de Proyecto usa min-height:500px en escritorio para que la foto mida lo
+     mismo en las 5 áreas (ver más abajo). En mobile el layout se apila (foto arriba,
+     texto abajo) y ese mínimo lo hacía innecesariamente alto; se saca acá. */
+  .project-modal { grid-template-columns: 1fr; min-height: 0; max-height: calc(100vh - 24px); }
+  .project-modal-media { border-radius: 20px 20px 0 0; }
   .project-modal-body { padding: 24px; }
 }
 
