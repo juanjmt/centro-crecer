@@ -184,15 +184,24 @@ ul, ol { margin: 0; padding: 0; }
 .historia-col { display: flex; flex-direction: column; gap: 32px; }
 .historia-intro { position: sticky; top: calc(var(--header-h) + 24px); }
 .timeline { list-style: none; position: relative; padding-left: 28px; border-left: 2px solid var(--line); }
-.timeline li { position: relative; padding-bottom: 26px; }
-.timeline li:last-child { padding-bottom: 0; }
-.timeline li::before {
+.timeline > li { position: relative; padding-bottom: 26px; }
+.timeline > li:last-child { padding-bottom: 0; }
+.timeline > li::before {
   content: ""; position: absolute; left: -37px; top: 6px; width: 16px; height: 16px;
   border-radius: 50%; background: var(--purple); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--purple);
 }
-.timeline li:last-child::before { background: var(--yellow); box-shadow: 0 0 0 2px var(--yellow); }
+.timeline > li:last-child::before { background: var(--yellow); box-shadow: 0 0 0 2px var(--yellow); }
 .tl-date { display: block; font-family: var(--font-head); font-weight: 600; color: var(--navy); margin-bottom: 2px; }
-.timeline p { margin: 0; }
+.timeline p { margin: 0 0 .6em; }
+.timeline p:last-child { margin-bottom: 0; }
+
+/* Lista de hitos dentro de un mismo año (ej. 2024, que tiene varios logros) */
+.tl-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tl-items li { position: relative; padding-left: 16px; padding-bottom: 0; }
+.tl-items li::before {
+  content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--purple);
+}
 
 /* ============ Proyectos ============ */
 .projects { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; align-items: stretch; }
