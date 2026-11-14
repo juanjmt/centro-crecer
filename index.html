@@ -449,7 +449,7 @@
         <p class="section-lead">Escribinos</p>
         <p>Contanos si querés sumarte como voluntario, ayudar al Centro o hacernos una consulta. Te respondemos por mail.</p>
 
-        <!-- TODO: conectar este formulario para que envíe un mail a la casilla del Centro (hoy no envía a ningún lado). -->
+        <!-- Se envía a /api/contacto (api/contacto.mjs), que verifica Turnstile y manda el mail con Resend. -->
         <form class="form" id="form-contacto" novalidate>
           <label>Motivo
             <select name="motivo">
@@ -470,6 +470,13 @@
           <label>Mensaje
             <textarea name="mensaje" rows="4"></textarea>
           </label>
+          <!-- Campo trampa para robots: queda oculto y una persona nunca lo completa. -->
+          <label class="hp" aria-hidden="true">Sitio web
+            <input name="web" type="text" tabindex="-1" autocomplete="off">
+          </label>
+          <!-- Verificación humana (Cloudflare Turnstile). Reemplazar data-sitekey por la clave
+               del sitio; 1x00000000000000000000AA es la clave de prueba que siempre pasa. -->
+          <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" data-language="es"></div>
           <button class="btn btn-primary" type="submit">Enviar mensaje</button>
           <p class="form-status" role="status" aria-live="polite"></p>
         </form>
@@ -553,6 +560,7 @@
   <p class="footer-legal">© <span id="anio">2026</span> Centro Crecer</p>
 </footer>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="js/main.js"></script>
 </body>
 </html>
