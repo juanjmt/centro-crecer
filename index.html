@@ -474,9 +474,9 @@
           <label class="hp" aria-hidden="true">Sitio web
             <input name="web" type="text" tabindex="-1" autocomplete="off">
           </label>
-          <!-- Verificación humana (Cloudflare Turnstile). Reemplazar data-sitekey por la clave
-               del sitio; 1x00000000000000000000AA es la clave de prueba que siempre pasa. -->
-          <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" data-language="es"></div>
+          <!-- Verificación humana (Cloudflare Turnstile). La clave del sitio (data-sitekey) la pone
+               js/main.js según el dominio: la real en centrocrecer.org.ar, la de prueba en el resto. -->
+          <div class="cf-turnstile" data-language="es"></div>
           <button class="btn btn-primary" type="submit">Enviar mensaje</button>
           <p class="form-status" role="status" aria-live="polite"></p>
         </form>
@@ -560,7 +560,8 @@
   <p class="footer-legal">© <span id="anio">2026</span> Centro Crecer</p>
 </footer>
 
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<!-- main.js va antes que Turnstile: tiene que poner la clave del sitio antes de que el widget se dibuje. -->
 <script src="js/main.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </body>
 </html>

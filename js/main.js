@@ -91,6 +91,14 @@
   var submitBtn = form.querySelector('button[type="submit"]');
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  // Clave pública del widget de Turnstile. La real solo vale en los dominios cargados en
+  // Cloudflare; en los previews de Vercel y en local se usa la de prueba, que siempre pasa
+  // (y en Vercel → Preview, TURNSTILE_SECRET_KEY tiene la secreta de prueba).
+  var TURNSTILE_SITE_KEY = '0x4AAAAAAGCcm0oFSxGCOTqD';
+  var TURNSTILE_TEST_KEY = '1x00000000000000000000AA';
+  var isProduccion = /(^|\.)centrocrecer\.org\.ar$/.test(location.hostname);
+  form.querySelector('.cf-turnstile').setAttribute('data-sitekey', isProduccion ? TURNSTILE_SITE_KEY : TURNSTILE_TEST_KEY);
+
   function setStatus(text, type) {
     status.textContent = text;
     status.className = 'form-status' + (type ? ' ' + type : '');
