@@ -449,7 +449,7 @@
         <p class="section-lead">Escribinos</p>
         <p>Contanos si querés sumarte como voluntario, ayudar al Centro o hacernos una consulta. Te respondemos por mail.</p>
 
-        <!-- TODO: conectar este formulario para que envíe un mail a la casilla del Centro (hoy no envía a ningún lado). -->
+        <!-- Se envía a /api/contacto (api/contacto.mjs), que verifica Turnstile y manda el mail con Resend. -->
         <form class="form" id="form-contacto" novalidate>
           <label>Motivo
             <select name="motivo">
@@ -470,6 +470,13 @@
           <label>Mensaje
             <textarea name="mensaje" rows="4"></textarea>
           </label>
+          <!-- Campo trampa para robots: queda oculto y una persona nunca lo completa. -->
+          <label class="hp" aria-hidden="true">No completar este campo
+            <input name="hp_contacto" type="text" tabindex="-1" autocomplete="off">
+          </label>
+          <!-- Verificación humana (Cloudflare Turnstile). La clave del sitio (data-sitekey) la pone
+               js/main.js según el dominio: la real en centrocrecer.org.ar, la de prueba en el resto. -->
+          <div class="cf-turnstile" data-language="es"></div>
           <button class="btn btn-primary" type="submit">Enviar mensaje</button>
           <p class="form-status" role="status" aria-live="polite"></p>
         </form>
@@ -553,6 +560,8 @@
   <p class="footer-legal">© <span id="anio">2026</span> Centro Crecer</p>
 </footer>
 
+<!-- main.js va antes que Turnstile: tiene que poner la clave del sitio antes de que el widget se dibuje. -->
 <script src="js/main.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </body>
 </html>

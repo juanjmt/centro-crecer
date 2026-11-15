@@ -84,25 +84,78 @@
     if (e.key === 'Escape') closeAll();
   });
 
-  // Formulario de contacto: por ahora no envía a ningún lado.
-  // TODO: conectarlo a un backend (o servicio de formularios) que envíe un mail a la casilla del Centro,
-  // y reemplazar acá el mensaje de status por la confirmación real del envío.
+  // Formulario de contacto: se envía a /api/contacto (api/contacto.mjs), que verifica el
+  // desafío de Cloudflare Turnstile y manda el mail a la casilla del Centro con Resend.
   var form = document.getElementById('form-contacto');
   var status = form.querySelector('.form-status');
-  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var submitBtn = form.querySelector('button[type="submit"]');
+  var EMAIL_RE = /^[^\s@<>",;()]+@[^\s@<>",;()]+\.[^\s@<>",;()]+$/;
+
+  // Clave pública del widget de Turnstile. La real solo vale en los dominios cargados en
+  // Cloudflare; en los previews de Vercel y en local se usa la de prueba, que siempre pasa
+  // (y en Vercel → Preview, TURNSTILE_SECRET_KEY tiene la secreta de prueba).
+  var TURNSTILE_SITE_KEY = '0x4AAAAAAGCcm0oFSxGCOTqD';
+  var TURNSTILE_TEST_KEY = '1x00000000000000000000AA';
+  var isProduccion = /(^|\.)centrocrecer\.org\.ar$/.test(location.hostname);
+  form.querySelector('.cf-turnstile').setAttribute('data-sitekey', isProduccion ? TURNSTILE_SITE_KEY : TURNSTILE_TEST_KEY);
+
+  function setStatus(text, type) {
+    status.textContent = text;
+    status.className = 'form-status' + (type ? ' ' + type : '');
+  }
+
+  function resetTurnstile() {
+    if (window.turnstile) window.turnstile.reset();
+  }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     var data = new FormData(form);
     var nombre = (data.get('nombre') || '').toString().trim();
     var mail = (data.get('mail') || '').toString().trim();
+    var token = (data.get('cf-turnstile-response') || '').toString();
     if (!nombre || !EMAIL_RE.test(mail)) {
-      status.textContent = 'Completá tu nombre y un mail válido para que podamos responderte.';
-      status.className = 'form-status error';
+      setStatus('Completá tu nombre y un mail válido para que podamos responderte.', 'error');
       return;
     }
-    status.textContent = 'Todavía estamos conectando este formulario con nuestro mail. Mientras tanto, escribinos por WhatsApp o llamanos: ¡vamos a responderte enseguida!';
-    status.className = 'form-status';
+    if (!token) {
+      setStatus('Confirmá que no sos un robot antes de enviar.', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    setStatus('Enviando…');
+
+    fetch('/api/contacto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        motivo: data.get('motivo'),
+        nombre: nombre,
+        mail: mail,
+        telefono: data.get('telefono'),
+        mensaje: data.get('mensaje'),
+        hp_contacto: data.get('hp_contacto'),
+        token: token
+      })
+    })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (!res.ok) throw { serverMessage: body.error };
+        });
+      })
+      .then(function () {
+        form.reset();
+        setStatus('¡Gracias! Recibimos tu mensaje y te vamos a responder por mail a la brevedad.', 'ok');
+      })
+      .catch(function (err) {
+        var msg = (err && err.serverMessage) || 'No pudimos enviar el mensaje.';
+        setStatus(msg + ' Si el problema sigue, escribinos por WhatsApp o llamanos.', 'error');
+      })
+      .then(function () {
+        submitBtn.disabled = false;
+        resetTurnstile();
+      });
   });
 
   // Eventos: al hacer click (o Enter/Espacio) en una tarjeta se abre una ventana

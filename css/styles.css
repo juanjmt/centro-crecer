@@ -417,6 +417,8 @@ ul, ol { margin: 0; padding: 0; }
 .form button { justify-self: start; border: 0; }
 .form-status { margin: 0; font-size: .9rem; min-height: 1.4em; }
 .form-status.error { color: #b3261e; }
+.form-status.ok { color: #1e7b34; }
+.form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .form-alt { margin: 16px 0 0; font-size: .88rem; }
 
 .faq details { border-bottom: 1px solid var(--line); padding: 16px 0; }
