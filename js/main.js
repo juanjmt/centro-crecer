@@ -89,7 +89,7 @@
   var form = document.getElementById('form-contacto');
   var status = form.querySelector('.form-status');
   var submitBtn = form.querySelector('button[type="submit"]');
-  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var EMAIL_RE = /^[^\s@<>",;()]+@[^\s@<>",;()]+\.[^\s@<>",;()]+$/;
 
   // Clave pública del widget de Turnstile. La real solo vale en los dominios cargados en
   // Cloudflare; en los previews de Vercel y en local se usa la de prueba, que siempre pasa
@@ -135,7 +135,7 @@
         mail: mail,
         telefono: data.get('telefono'),
         mensaje: data.get('mensaje'),
-        web: data.get('web'),
+        hp_contacto: data.get('hp_contacto'),
         token: token
       })
     })

@@ -12,21 +12,37 @@
 // Gmail lo marcaría como suplantación), pero se muestra con el nombre de quien escribió y
 // reply_to apunta a su mail, así que "Responder" le contesta directo a esa persona.
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Sin espacios ni caracteres como <>",;() para que no entren formatos tipo "Nombre<otro@mail>".
+const EMAIL_RE = /^[^\s@<>",;()]+@[^\s@<>",;()]+\.[^\s@<>",;()]+$/;
 const MOTIVOS = ['Quiero ser voluntario/a', 'Quiero ayudar al Centro', 'Tengo una consulta'];
 const MAX = { nombre: 120, mail: 200, telefono: 40, mensaje: 5000 };
+const ENV_REQUERIDAS = ['RESEND_API_KEY', 'TURNSTILE_SECRET_KEY', 'CONTACT_TO_EMAIL', 'CONTACT_FROM_EMAIL'];
+const TIMEOUT_MS = 8000;
 
 export async function POST(request) {
+  const faltantes = ENV_REQUERIDAS.filter((name) => !process.env[name]);
+  if (faltantes.length) {
+    console.error('Faltan variables de entorno:', faltantes.join(', '));
+    return Response.json({ error: 'No pudimos enviar el mensaje.' }, { status: 500 });
+  }
+
   let body;
   try {
     body = await request.json();
   } catch {
     return Response.json({ error: 'Formato inválido.' }, { status: 400 });
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return Response.json({ error: 'Formato inválido.' }, { status: 400 });
+  }
 
   // Honeypot: campo oculto que una persona nunca completa. Si viene con algo, es un robot:
-  // respondemos OK para no darle pistas, pero no enviamos nada.
-  if (clean(body.web)) return Response.json({ ok: true });
+  // respondemos OK para no darle pistas, pero no enviamos nada. Se loguea para detectar
+  // falsos positivos (por ejemplo, un autocompletado del navegador).
+  if (clean(body.hp_contacto)) {
+    console.warn('Honeypot activado, mensaje descartado');
+    return Response.json({ ok: true });
+  }
 
   const motivo = MOTIVOS.includes(body.motivo) ? body.motivo : 'Tengo una consulta';
   const nombre = clean(body.nombre).slice(0, MAX.nombre);
@@ -51,26 +67,31 @@ export async function POST(request) {
     ['Mensaje', mensaje || '—'],
   ];
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: `"${displayName(nombre)} (vía web Crecer)" <${fromAddress(process.env.CONTACT_FROM_EMAIL)}>`,
-      to: process.env.CONTACT_TO_EMAIL,
-      reply_to: mail,
-      subject: `Nuevo mensaje desde la web — ${motivo}`,
-      text: filas.map(([k, v]) => `${k}: ${v}`).join('\n'),
-      html: filas
-        .map(([k, v]) => `<p><strong>${k}:</strong><br>${escapeHtml(v).replace(/\n/g, '<br>')}</p>`)
-        .join(''),
-    }),
-  });
-
-  if (!res.ok) {
-    console.error('Resend error', res.status, await res.text());
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: `"${displayName(nombre)} (vía web Crecer)" <${fromAddress(process.env.CONTACT_FROM_EMAIL)}>`,
+        to: process.env.CONTACT_TO_EMAIL,
+        reply_to: mail,
+        subject: `Nuevo mensaje desde la web — ${motivo}`,
+        text: filas.map(([k, v]) => `${k}: ${v}`).join('\n'),
+        html: filas
+          .map(([k, v]) => `<p><strong>${k}:</strong><br>${escapeHtml(v).replace(/\n/g, '<br>')}</p>`)
+          .join(''),
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.error('Resend error', res.status, await res.text());
+      return Response.json({ error: 'No pudimos enviar el mensaje.' }, { status: 502 });
+    }
+  } catch (err) {
+    console.error('Resend error', err);
     return Response.json({ error: 'No pudimos enviar el mensaje.' }, { status: 502 });
   }
 
@@ -79,12 +100,13 @@ export async function POST(request) {
 
 async function verificarTurnstile(token, ip) {
   if (!token) return false;
-  const form = new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY || '', response: token });
+  const form = new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY, response: token });
   if (ip) form.set('remoteip', ip);
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       body: form,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const data = await res.json();
     return data.success === true;
