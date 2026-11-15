@@ -6,7 +6,11 @@
 //   TURNSTILE_SECRET_KEY  clave secreta del widget de Turnstile
 //   CONTACT_TO_EMAIL      casilla que recibe los mensajes
 //   CONTACT_FROM_EMAIL    remitente, de un dominio verificado en Resend
-//                         (ej: "Web Centro Crecer <web@centrocrecer.org.ar>")
+//                         (ej: "web@centrocrecer.org.ar")
+//
+// El mail sale desde CONTACT_FROM_EMAIL (no se puede usar el mail de la persona como remitente:
+// Gmail lo marcaría como suplantación), pero se muestra con el nombre de quien escribió y
+// reply_to apunta a su mail, así que "Responder" le contesta directo a esa persona.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOTIVOS = ['Quiero ser voluntario/a', 'Quiero ayudar al Centro', 'Tengo una consulta'];
@@ -54,7 +58,7 @@ export async function POST(request) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: process.env.CONTACT_FROM_EMAIL,
+      from: `"${displayName(nombre)} (vía web Crecer)" <${fromAddress(process.env.CONTACT_FROM_EMAIL)}>`,
       to: process.env.CONTACT_TO_EMAIL,
       reply_to: mail,
       subject: `Nuevo mensaje desde la web — ${motivo}`,
@@ -88,6 +92,17 @@ async function verificarTurnstile(token, ip) {
     console.error('Turnstile error', err);
     return false;
   }
+}
+
+// Acepta "web@dominio" o "Nombre <web@dominio>" y devuelve solo la dirección.
+function fromAddress(value) {
+  const match = /<([^>]+)>/.exec(value || '');
+  return (match ? match[1] : value || '').trim();
+}
+
+// Saca del nombre los caracteres que podrían romper el encabezado "From".
+function displayName(nombre) {
+  return nombre.replace(/["<>\\\r\n,;:()@]/g, '').slice(0, 60).trim() || 'Contacto';
 }
 
 function clean(value) {
